@@ -1,0 +1,124 @@
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f0f3f5;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  background: #2c3e50;
+  color: white;
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+header h1 {
+  font-size: 20px;
+}
+
+.conteudo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  flex: 1;
+}
+
+.card-atual {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.paciente-info h2 {
+  color: #2c3e50;
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.paciente-info p {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.badge-gravidade {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.bg-g1 {
+  background-color: #2ecc71;
+}
+.bg-g2 {
+  background-color: #3498db;
+}
+.bg-g3 {
+  background-color: #f1c40f;
+  color: #2c3e50;
+}
+.bg-g4 {
+  background-color: #e67e22;
+}
+.bg-g5 {
+  background-color: #e74c3c;
+}
+
+.acoes-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+  text-align: center;
+}
+
+.btn-chamar {
+  background-color: #3498db;
+  grid-column: span 2;
+}
+
+.btn-iniciar {
+  background-color: #2ecc71;
+}
+.btn-ausente {
+  background-color: #95a5a6;
+}
+.btn-finalizar {
+  background-color: #e74c3c;
+  grid-column: span 2;
+}
+
+.desativado {
+  opacity: 0.3;
+  pointer-events: none;
+}
