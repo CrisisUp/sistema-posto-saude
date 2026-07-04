@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepção - Triagem e Cadastro</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Layout dos botões de gravidade */
+        .gravidade-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .btn-gravidade {
+            padding: 12px;
+            border: 3px solid transparent;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+        }
+
+        .g1 {
+            background-color: #2ecc71;
+        }
+
+        /* Verde (Eletivo) */
+        .g2 {
+            background-color: #3498db;
+        }
+
+        /* Azul (Pouco Urgente) */
+        .g3 {
+            background-color: #f1c40f;
+            color: #2c3e50;
+        }
+
+        /* Amarelo (Urgente) */
+        .g4 {
+            background-color: #e67e22;
+        }
+
+        /* Laranja (Muito Urgente) */
+        .g5 {
+            background-color: #e74c3c;
+        }
+
+        /* Vermelho (Emergência) */
+
+        /* Destaca o botão que o atendente clicou */
+        .btn-gravidade.selecionado {
+            border-color: #2c3e50;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-salvar {
+            width: 100%;
+            padding: 15px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn-salvar:hover {
+            background-color: #1a252f;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Novo Cadastro & Triagem</h2>
+
+        <form id="formCadastro">
+            <div class="form-group">
+                <label for="cpf">CPF ou Cartão SUS</label>
+                <input type="text" id="cpf" placeholder="000.000.000-00" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="nome">Nome Completo do Paciente</label>
+                <input type="text" id="nome" placeholder="Ex: João da Silva" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="nascimento">Data de Nascimento</label>
+                <input type="date" id="nascimento" required>
+            </div>
+
+            <div class="form-group">
+                <label for="mae">Nome Completo da Mãe</label>
+                <input type="text" id="mae" placeholder="Nome da mãe para segurança" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="especialidade">Especialidade / Fila de Destino</label>
+                <select id="especialidade" required>
+                    <option value="1">Clínico Geral</option>
+                    <option value="2">Pediatria</option>
+                    <option value="3">Odontologia</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Classificação de Risco (Gravidade)</label>
+                <div class="gravidade-container">
+                    <div class="btn-gravidade g1 selecionado" onclick="selecionarGravidade(1, this)">Verde</div>
+                    <div class="btn-gravidade g2" onclick="selecionarGravidade(2, this)">Azul</div>
+                    <div class="btn-gravidade g3" onclick="selecionarGravidade(3, this)">Amarelo</div>
+                    <div class="btn-gravidade g4" onclick="selecionarGravidade(4, this)">Laranja</div>
+                    <div class="btn-gravidade g5" onclick="selecionarGravidade(5, this)">Vermelho</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-salvar">Inserir Paciente na Fila</button>
+        </form>
+    </div>
+
+    <script>
+        let gravidadeSelecionada = 1; // Começa no Verde por padrão
+
+        function selecionarGravidade(nivel, elemento) {
+            // Remove a borda de seleção de todos os botões
+            document.querySelectorAll('.btn-gravidade').forEach(btn => btn.classList.remove('selecionado'));
+            // Coloca a borda no botão que foi clicado agora
+            elemento.classList.add('selecionado');
+            gravidadeSelecionada = nivel;
+        }
+
+        // Escuta o momento em que o atendente clica em enviar o formulário
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Impede a página de atualizar sozinha
+
+            // Junta as informações da tela exatamente como o nosso backend espera receber
+            const dadosPaciente = {
+                nome_paciente: document.getElementById('nome').value,
+                documento_unico: document.getElementById('cpf').value,
+                nome_mae: document.getElementById('mae').value,
+                data_nascimento: document.getElementById('nascimento').value,
+                gravidade: gravidadeSelecionada,
+                especialidade_id: parseInt(document.getElementById('especialidade').value)
+            };
+
+            try {
+                // Envia os dados para a API do Backend local via rede
+                const resposta = await fetch('http://127.0.0.1:8000/recepcao/cadastrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosPaciente)
+                });
+
+                const resultado = await resposta.json();
+
+                if (resposta.ok) {
+                    alert("Sucesso: " + resultado.mensagem);
+                    document.getElementById('formCadastro').reset(); // Limpa os campos da tela
+                    selecionarGravidade(1, document.querySelector('.g1')); // Reseta gravidade para Verde
+                    document.getElementById('cpf').focus(); // Coloca o cursor de volta no CPF
+                } else {
+                    alert("Erro no servidor: " + resultado.detail);
+                }
+            } catch (erro) {
+                alert("Não foi possível conectar ao backend. O Uvicorn está ligado?");
+            }
+        });
+    </script>
+</body>
+
+</html>

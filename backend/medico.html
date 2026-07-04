@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultório Médico - Painel de Atendimento</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f0f3f5;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 20px;
+        }
+
+        .conteudo {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .card-atual {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .paciente-info h2 {
+            color: #2c3e50;
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .paciente-info p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .badge-gravidade {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .bg-g1 {
+            background-color: #2ecc71;
+        }
+
+        .bg-g2 {
+            background-color: #3498db;
+        }
+
+        .bg-g3 {
+            background-color: #f1c40f;
+            color: #2c3e50;
+        }
+
+        .bg-g4 {
+            background-color: #e67e22;
+        }
+
+        .bg-g5 {
+            background-color: #e74c3c;
+        }
+
+        .acoes-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            text-align: center;
+        }
+
+        .btn-chamar {
+            background-color: #3498db;
+            grid-column: span 2;
+        }
+
+        .btn-iniciar {
+            background-color: #2ecc71;
+        }
+
+        .btn-ausente {
+            background-color: #95a5a6;
+        }
+
+        .btn-finalizar {
+            background-color: #e74c3c;
+            grid-column: span 2;
+        }
+
+        .desativado {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1 id="tituloConsultorio">Clínico Geral - Consultório 1</h1>
+        <span style="color: #2ecc71; font-weight: bold;">● Online</span>
+    </header>
+
+    <div class="conteudo">
+        <div class="card-atual">
+            <div class="paciente-info" id="blocoPaciente">
+                <p style="color: #999;">Paciente da Vez:</p>
+                <h2 id="nomePaciente">Nenhum paciente chamado</h2>
+                <p id="docPaciente">CPF/SUS: --</p>
+                <p id="maePaciente">Mãe: --</p>
+                <p id="idadePaciente">Idade: --</p>
+                <span id="gravidadePaciente" class="badge-gravidade" style="display:none;"></span>
+            </div>
+
+            <div class="acoes-container">
+                <button id="btnChamar" type="button" class="btn btn-chamar" onclick="chamarProximo()">CHAMAR
+                    PRÓXIMO</button>
+                <button id="btnIniciar" class="btn btn-iniciar desativado" onclick="alterarStatus('INICIAR')">INICIAR
+                    ATENDIMENTO</button>
+                <button id="btnAusente" class="btn btn-ausente desativado" onclick="alterarStatus('AUSENTE')">NÃO
+                    COMPARECEU (AUSENTE)</button>
+                <button id="btnFinalizar" class="btn btn-finalizar desativado"
+                    onclick="alterarStatus('FINALIZAR')">CONCLUIR ATENDIMENTO</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ESPECIALIDADE_ID = 1;
+        const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+        let pacienteAtual = null;
+
+        // --- DETECÇÃO DINÂMICA DO CONSULTÓRIO VIA URL ---
+        const parametrosUrl = new URLSearchParams(window.location.search);
+        const numeroSala = parametrosUrl.get('sala') || "1";
+        document.getElementById('tituloConsultorio').innerText = `Clínico Geral - Consultório ${numeroSala}`;
+
+        async function chamarProximo() {
+            try {
+                const respostaProximo = await fetch(`${API_URL}/medico/proximo/${ESPECIALIDADE_ID}`);
+                const paciente = await respostaProximo.json();
+
+                if (paciente.mensagem) {
+                    alert("Fila vazia! Nenhum paciente aguardando nesta especialidade.");
+                    return;
+                }
+
+                pacienteAtual = paciente;
+
+                await fetch(`${API_URL}/medico/chamar/${paciente.id}?sala=${numeroSala}`, { method: 'POST' });
+
+                document.getElementById('nomePaciente').innerText = paciente.nome_paciente;
+                document.getElementById('docPaciente').innerText = `CPF/SUS: ${paciente.documento_unico}`;
+                document.getElementById('maePaciente').innerText = `Mãe: ${paciente.nome_mae}`;
+
+                const anoNasc = new Date(paciente.data_nascimento).getFullYear();
+                const anoAtual = new Date().getFullYear();
+                document.getElementById('idadePaciente').innerText = `Idade: ${anoAtual - anoNasc} anos`;
+
+                const badge = document.getElementById('gravidadePaciente');
+                badge.className = `badge-gravidade bg-g${paciente.gravidade}`;
+                badge.innerText = `Gravidade Nível ${paciente.gravidade}`;
+                badge.style.display = "inline-block";
+
+                document.getElementById('btnChamar').classList.add('desativado');
+                document.getElementById('btnIniciar').classList.remove('desativado');
+                document.getElementById('btnAusente').classList.remove('desativado');
+
+            } catch (erro) {
+                alert("Erro de comunicação com o servidor local.");
+            }
+        }
+
+        async function alterarStatus(acao) {
+            if (!pacienteAtual) return;
+
+            if (acao === 'AUSENTE' && !confirm("Confirmar que o paciente não compareceu após as chamadas? Mandar para o fim da fila?")) {
+                return;
+            }
+
+            try {
+                // Envia para o backend se o paciente foi FINALIZADO ou ficou AUSENTE
+                const resposta = await fetch(`${API_URL}/medico/status/${pacienteAtual.id}?acao=${acao}`, { method: 'POST' });
+                const resultado = await resposta.json();
+
+                if (resultado.status === 'sucesso') {
+                    if (acao === 'INICIAR') {
+                        document.getElementById('btnIniciar').classList.add('desativado');
+                        document.getElementById('btnAusente').classList.add('desativado');
+                        document.getElementById('btnFinalizar').classList.remove('desativado');
+                        alert("Atendimento iniciado no consultório.");
+                    }
+                    else if (acao === 'AUSENTE' || acao === 'FINALIZAR') {
+                        // Limpa a tela do médico para o próximo
+                        pacienteAtual = null;
+                        document.getElementById('nomePaciente').innerText = "Nenhum paciente chamado";
+                        document.getElementById('docPaciente').innerText = "CPF/SUS: --";
+                        document.getElementById('maePaciente').innerText = "Mãe: --";
+                        document.getElementById('idadePaciente').innerText = "Idade: --";
+                        document.getElementById('gravidadePaciente').style.display = "none";
+
+                        document.getElementById('btnChamar').classList.remove('desativado');
+                        document.getElementById('btnIniciar').classList.add('desativado');
+                        document.getElementById('btnAusente').classList.add('desativado');
+                        document.getElementById('btnFinalizar').classList.add('desativado');
+
+                        if (acao === 'FINALIZAR') alert("Atendimento finalizado com sucesso!");
+                        if (acao === 'AUSENTE') alert("Paciente marcado como ausente e enviado para o fim da fila!");
+                    }
+                } else {
+                    alert("Erro ao atualizar status no servidor.");
+                }
+            } catch (erro) {
+                alert("Erro de comunicação com o servidor.");
+            }
+        }
+    </script>
+</body>
+
+</html>
