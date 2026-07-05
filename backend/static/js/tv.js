@@ -6,10 +6,8 @@ let historicoChamadas = [];
 
 // --- FUNÇÃO DE RENDERIZAÇÃO DO HISTÓRICO ---
 function renderizarHistorico() {
-  const container =
-    document.getElementById("historicoContainer") ||
-    document.querySelector(".historico-lista") ||
-    document.getElementById("historico");
+  // Busca o container correto configurado no HTML (historicoLista)
+  const container = document.getElementById("historicoLista") || document.querySelector(".historico-lista");
   if (!container) {
     console.warn("Elemento container do histórico não foi localizado no HTML.");
     return;
@@ -18,16 +16,18 @@ function renderizarHistorico() {
   // Limpa a lista anterior
   container.innerHTML = "";
 
-  // Renderiza os últimos pacientes chamados
+  // Renderiza os últimos pacientes chamados utilizando o mesmo padrão visual elegante
   historicoChamadas.forEach((paciente) => {
     const item = document.createElement("div");
-    item.className = "historico-item";
+    item.className = "fila-item"; // Sincronizado com o CSS estrutural
     item.innerHTML = `
-      <div class="historico-info">
-        <span class="historico-nome">${paciente.nome}</span>
-        <span class="historico-sala">${paciente.sala}</span>
+      <div class="paciente-dados">
+        <span class="paciente-nome">${paciente.nome}</span>
+        <span class="paciente-sub">${paciente.sala}</span>
       </div>
-      <span class="historico-hora">${paciente.hora}</span>
+      <div class="paciente-dados" style="align-items: flex-end;">
+        <span class="paciente-sub" style="font-weight: 600; color: var(--cor-primaria);">${paciente.hora}</span>
+      </div>
     `;
     container.appendChild(item);
   });
@@ -47,13 +47,14 @@ function conectarWebSocket() {
         const dados = await resposta.json();
 
         if (dados && dados.nome) {
-          const elementoNome = document.getElementById("painelNome");
-          const elementoSala = document.getElementById("painelSala");
+          // 🚨 IDs CORRIGIDOS: apontando para os novos elementos do HTML
+          const elementoNome = document.getElementById("nomePacienteDestaque");
+          const elementoSala = document.getElementById("salaDestino");
 
           if (elementoNome && elementoSala) {
             elementoNome.innerText = dados.nome.toUpperCase();
             elementoSala.innerText = dados.sala.toUpperCase();
-            elementoSala.style.display = "block";
+            elementoSala.style.display = "inline-block";
           }
         }
       }
@@ -68,20 +69,22 @@ function conectarWebSocket() {
     try {
       const dados = JSON.parse(event.data);
 
-      const elementoNome = document.getElementById("painelNome");
-      const elementoSala = document.getElementById("painelSala");
+      // 🚨 IDs CORRIGIDOS: apontando para os novos elementos do HTML
+      const elementoNome = document.getElementById("nomePacienteDestaque");
+      const elementoSala = document.getElementById("salaDestino");
 
       if (!elementoNome || !elementoSala) {
+        console.warn("Elementos do painel principal não foram encontrados no HTML.");
         return;
       }
 
       const nomeAtual = elementoNome.innerText.trim().toUpperCase();
 
-      // 🔄 GESTÃO DE HISTÓRICO CORRIGIDA: Testa contra strings vazias ou padrões de espera de forma insensível a maiúsculas
+      // 🔄 GESTÃO DE HISTÓRICO: Verifica o estado anterior antes de sobrescrever
       if (
-        elementoSala.style.display === "block" &&
         nomeAtual !== "" &&
         !nomeAtual.includes("AGUARDANDO") &&
+        !nomeAtual.includes("PAINEL ATIVO") &&
         !nomeAtual.includes("NENHUM")
       ) {
         const agora = new Date();
@@ -96,7 +99,7 @@ function conectarWebSocket() {
           hora: horaFormatada,
         };
 
-        // Evita duplicar o mesmo paciente seguido no histórico se o botão for clicado duas vezes
+        // Evita duplicar o mesmo paciente seguido se o endpoint disparar duas vezes
         if (
           historicoChamadas.length === 0 ||
           historicoChamadas[0].nome !== pacienteAntigo.nome
@@ -112,11 +115,10 @@ function conectarWebSocket() {
       // 📺 ATUALIZAÇÃO DO PAINEL PRINCIPAL
       elementoNome.innerText = dados.nome.toUpperCase();
       elementoSala.innerText = dados.sala.toUpperCase();
-      elementoSala.style.display = "block";
+      elementoSala.style.display = "inline-block";
 
-      // Animações visuais
+      // Dispara a animação css de pulso/alerta
       elementoNome.classList.add("piscar");
-      elementoSala.classList.add("piscar");
 
       try {
         tocarSomChamada();
@@ -126,7 +128,6 @@ function conectarWebSocket() {
 
       setTimeout(() => {
         elementoNome.classList.remove("piscar");
-        elementoSala.classList.remove("piscar");
       }, 6000);
     } catch (erroGeral) {
       console.error("Erro ao processar o onmessage:", erroGeral);
@@ -151,10 +152,7 @@ function tocarSomChamada() {
     oscilador1.connect(ganho1);
     ganho1.connect(audioCtx.destination);
     oscilador1.start();
-    ganho1.gain.exponentialRampToValueAtTime(
-      0.00001,
-      audioCtx.currentTime + 0.4,
-    );
+    ganho1.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
     oscilador1.stop(audioCtx.currentTime + 0.4);
 
     setTimeout(() => {
@@ -166,10 +164,7 @@ function tocarSomChamada() {
         oscilador2.connect(ganho2);
         ganho2.connect(audioCtx.destination);
         oscilador2.start();
-        ganho2.gain.exponentialRampToValueAtTime(
-          0.00001,
-          audioCtx.currentTime + 0.5,
-        );
+        ganho2.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
         oscilador2.stop(audioCtx.currentTime + 0.5);
       } catch (e) {}
     }, 150);

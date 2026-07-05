@@ -1,124 +1,218 @@
-* {
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-  margin: 0;
-  padding: 0;
-}
+/* ==============================================================================
+   MEDICO.CSS - Painel de Controle e Gestão da Fila de Atendimento
+   ============================================================================== */
 
 body {
-  background-color: #f0f3f5;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  font-family: var(--fonte-principal);
+  background-color: var(--bg-principal);
+  color: var(--texto-principal);
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
 }
 
-header {
-  background: #2c3e50;
-  color: white;
-  padding: 15px;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+/* --- Container Principal (Layout Grid Proporção 70/30) --- */
+.painel-medico-container {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-header h1 {
+/* --- Cartões/Módulos Genéricos --- */
+.modulo-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 25px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modulo-card h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
   font-size: 20px;
+  border-bottom: 2px solid var(--cor-borda);
+  padding-bottom: 10px;
 }
 
-.conteudo {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-  flex: 1;
-}
-
-.card-atual {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.paciente-info h2 {
-  color: #2c3e50;
-  font-size: 26px;
-  margin-bottom: 10px;
-}
-
-.paciente-info p {
-  font-size: 18px;
-  color: #555;
-  margin-bottom: 8px;
-}
-
-.badge-gravidade {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.bg-g1 {
-  background-color: #2ecc71;
-}
-.bg-g2 {
-  background-color: #3498db;
-}
-.bg-g3 {
-  background-color: #f1c40f;
-  color: #2c3e50;
-}
-.bg-g4 {
-  background-color: #e67e22;
-}
-.bg-g5 {
-  background-color: #e74c3c;
-}
-
-.acoes-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.btn {
-  padding: 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  color: white;
+/* --- Interface do Atendimento Atual (Coluna Esquerda) --- */
+.paciente-atual-box {
+  background-color: var(--bg-input);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-card);
+  padding: 35px;
+  margin-bottom: 25px;
   text-align: center;
 }
 
+/* Rótulo de Cabeçalho Superior */
+.paciente-atual-box > .paciente-sub:first-child {
+  font-size: 18px;
+  color: var(--texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* Nome do Paciente (Destaque Massivo) */
+.nome-paciente-actual,
+.paciente-atual-box h3,
+#nomePaciente {
+  font-size: 46px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 20px 0;
+  display: block;
+}
+
+/* Dados de Identificação (CPF, Mãe, Idade) */
+.paciente-atual-box .paciente-sub,
+#docPaciente,
+#maePaciente,
+#idadePaciente {
+  font-size: 24px;
+  line-height: 1.8;
+  color: var(--texto-principal);
+  font-weight: 500;
+}
+
+/* --- Painel de Controles Operacionais (Botões) --- */
+.controles-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-medico {
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-paged);
+  cursor: pointer;
+  transition: var(--transicao-suave);
+  width: 100%;
+}
+
 .btn-chamar {
-  background-color: #3498db;
-  grid-column: span 2;
+  background-color: var(--cor-primaria);
+  color: var(--texto-principal);
+}
+
+.btn-chamar:hover {
+  background-color: var(--cor-primaria-hover);
 }
 
 .btn-iniciar {
-  background-color: #2ecc71;
-}
-.btn-ausente {
-  background-color: #95a5a6;
-}
-.btn-finalizar {
-  background-color: #e74c3c;
-  grid-column: span 2;
+  background-color: var(--status-sucesso);
+  color: var(--texto-principal);
 }
 
-.desativado {
-  opacity: 0.3;
-  pointer-events: none;
+.btn-iniciar:hover {
+  opacity: 0.9;
+}
+
+.btn-finalizar {
+  background-color: var(--status-erro);
+  color: var(--texto-principal);
+}
+
+.btn-finalizar:hover {
+  opacity: 0.9;
+}
+
+.btn-disabled {
+  background-color: var(--cor-borda) !important;
+  color: var(--texto-secundario) !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+/* --- Interface da Fila de Espera (Coluna Direita) --- */
+.fila-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.fila-item {
+  background-color: var(--bg-input);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-paged);
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.paciente-dados {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paciente-nome {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Subtextos internos da listagem lateral da fila */
+.fila-item .paciente-sub {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+/* --- Badges de Classificação de Risco (Protocolo de Manchester) --- */
+.badge-gravidade {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 30px;
+  text-transform: uppercase;
+  color: #ffffff;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.gravidade-1 {
+  background-color: #2563eb;
+} /* Azul - Não urgente */
+.gravidade-2 {
+  background-color: #16a34a;
+} /* Verde - Pouco urgente */
+.gravidade-3 {
+  background-color: #ca8a04;
+  color: #000000;
+} /* Amarelo - Urgente */
+.gravidade-4 {
+  background-color: #ea580c;
+} /* Laranja - Muito urgente */
+.gravidade-5 {
+  background-color: #dc2626;
+  animation: pulsoAlerta 1.5s infinite alternate;
+} /* Vermelho - Emergência */
+
+@keyframes pulsoAlerta {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+}
+
+/* --- Responsividade para Tablets e Telas Menores (Adicionar no fim do medico.css) --- */
+@media (max-width: 992px) {
+  .painel-medico-container {
+    grid-template-columns: 1fr; /* Quebra o layout em uma única coluna */
+  }
+
+  .fila-lista {
+    max-height: 300px; /* Reduz a altura da fila para não empurrar tudo muito para baixo */
+  }
 }

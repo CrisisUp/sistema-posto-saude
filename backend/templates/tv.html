@@ -4,29 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
-    <title>Painel de Chamadas - Sala de Espera</title>
+    <title>Painel de Atendimento - TV</title>
+    <link rel="stylesheet" href="/static/css/global.css">
     <link rel="stylesheet" href="/static/css/tv.css">
 </head>
 
 <body>
 
-    <header>
-        <h1>PAINEL DE ATENDIMENTO - POSTO DE SAÚDE</h1>
-    </header>
+    <div class="painel-principal">
+        <div class="subtitulo-chamada">Paciente Chamado</div>
 
-    <div class="layout-principal">
-        <div class="chamada-container">
-            <div class="label-chamada">Paciente Chamado</div>
-            <div id="painelNome" class="nome-paciente">Aguardando Chamada...</div>
-            <div id="painelSala" class="local-destino" style="display: none;">CONSULTÓRIO --</div>
+        <div id="nomePacienteDestaque" class="nome-paciente-destaque piscar">
+            Aguardando Chamada...
         </div>
 
-        <div class="historico-container">
-            <div class="historico-titulo">Últimas Chamadas</div>
-            <div id="listaHistorico" class="historico-lista">
-            </div>
+        <div id="salaDestino" class="sala-destino" style="display: inline-block;">
+            Painel Ativo
+        </div>
+    </div>
+
+    <div class="painel-lateral">
+        <h3 class="titulo-lateral">Últimas Chamadas</h3>
+
+        <div id="historicoLista" class="historico-lista">
         </div>
     </div>
 

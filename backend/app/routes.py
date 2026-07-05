@@ -34,6 +34,16 @@ def proximo(especialidade_id: int):
         return {"mensagem": "Nenhum paciente aguardando nesta fila."}
     return paciente
 
+@router.get("/medico/fila/{especialidade_id}")
+def obter_fila_da_especialidade(especialidade_id: int):
+    """Retorna a lista completa de pacientes aguardando atendimento nesta especialidade."""
+    try:
+        # Busca a lista de dicionários direto do seu repositório
+        fila = repository.buscar_fila_por_especialidade(especialidade_id)
+        return fila  # Retorna a lista (Array) que o .map() do JS espera
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/medico/chamar/{atendimento_id}")
 async def chamar(atendimento_id: int, sala: str):
     nome_paciente = repository.atualizar_status_e_obter_nome(atendimento_id, sala)

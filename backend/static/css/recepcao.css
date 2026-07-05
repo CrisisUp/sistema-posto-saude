@@ -1,105 +1,139 @@
+/* ==============================================================================
+   RECEPCAO.CSS - Layout Estrutural do Formulário de Triagem e Cadastro
+   ============================================================================== */
+
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #121824;
-  color: #ae93db;
+  font-family: var(--fonte-principal);
+  background-color: var(--bg-principal);
+  color: var(--texto-principal);
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   margin: 0;
+  padding: 20px;
 }
 
+/* --- Container do Formulário --- */
 .cadastro-container {
-  background-color: #1e2640;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background-color: var(--bg-card);
+  padding: 35px;
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   width: 100%;
-  max-width: 600px;
+  max-width: 650px;
 }
 
-h2 {
-  color: #fff;
+.cadastro-container h2 {
+  color: var(--texto-principal);
   margin-top: 0;
   margin-bottom: 25px;
-  border-bottom: 2px solid #3b82f6;
-  padding-bottom: 10px;
+  font-size: 24px;
+  border-bottom: 2px solid var(--cor-primaria);
+  padding-bottom: 12px;
 }
 
+/* --- Organização dos Campos --- */
 .campo-grupo {
   display: flex;
   flex-direction: column;
-  margin-bottom: 18px;
-  flex: 1;
+  margin-bottom: 20px;
 }
 
+/* Permite colocar campos lado a lado (ex: Tipo de Doc e Número) */
 .campo-grupo-inline {
   display: flex;
   gap: 15px;
+  margin-bottom: 20px;
+}
+
+.campo-grupo-inline .campo-grupo {
+  margin-bottom: 0;
 }
 
 label {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #94a3b8;
+  margin-bottom: 8px;
+  color: var(--texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+/* --- Inputs e Selects Padronizados --- */
 input,
 select {
-  background-color: #0f172a;
-  border: 1px solid #334155;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 6px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--cor-borda);
+  color: var(--texto-principal);
+  padding: var(--espacamento-interno);
+  border-radius: var(--radius-paged);
   font-size: 15px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: var(--transicao-suave);
+  width: 100%;
 }
 
 input:focus,
 select:focus {
-  border-color: #3b82f6;
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 input::placeholder {
-  color: #475569;
+  color: var(--texto-placeholder);
 }
 
+/* --- Botão de Submissão --- */
 .btn-enviar {
-  background-color: #3b82f6;
-  color: #fff;
+  background-color: var(--cor-primaria);
+  color: var(--texto-principal);
   border: none;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 14px;
+  border-radius: var(--radius-paged);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
   margin-top: 10px;
-  transition: background-color 0.2s;
+  transition: var(--transicao-suave);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .btn-enviar:hover {
-  background-color: #2563eb;
+  background-color: var(--cor-primaria-hover);
 }
 
+/* --- Mensagens de Feedback do Ajax/Fetch --- */
 #mensagemFeedback {
-  margin-top: 15px;
-  padding: 12px;
-  border-radius: 6px;
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: var(--radius-paged);
   font-weight: 600;
   text-align: center;
+  font-size: 15px;
+  display: none; /* Controlado via JS */
 }
 
 .feedback-sucesso {
-  background-color: #10b98120;
-  color: #10b981;
-  border: 1px solid #10b98140;
+  display: block !important;
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--status-sucesso);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .feedback-erro {
-  background-color: #ef444420;
-  color: #ef4444;
-  border: 1px solid #ef444440;
+  display: block !important;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--status-erro);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* --- Responsividade para Celulares (Adicionar no fim do recepcao.css) --- */
+@media (max-width: 576px) {
+  .campo-grupo-inline {
+    flex-direction: column; /* Coloca o Tipo de Documento em cima do Número */
+    gap: 20px;
+  }
 }

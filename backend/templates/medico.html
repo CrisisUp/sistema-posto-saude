@@ -4,41 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
-    <title>Consultório Médico - Painel de Atendimento</title>
+    <title>Painel do Médico - Gestão de Fila</title>
+    <link rel="stylesheet" href="/static/css/global.css">
     <link rel="stylesheet" href="/static/css/medico.css">
 </head>
 
 <body>
 
-    <header>
-        <h1 id="tituloConsultorio">Clínico Geral - Consultório 1</h1>
-        <span style="color: #2ecc71; font-weight: bold;">● Online</span>
-    </header>
+    <div class="painel-medico-container">
 
-    <div class="conteudo">
-        <div class="card-atual">
-            <div class="paciente-info" id="blocoPaciente">
-                <p style="color: #999;">Paciente da Vez:</p>
-                <h2 id="nomePaciente">Nenhum paciente chamado</h2>
-                <p id="docPaciente">CPF/SUS: --</p>
-                <p id="maePaciente">Mãe: --</p>
-                <p id="idadePaciente">Idade: --</p>
-                <span id="gravidadePaciente" class="badge-gravidade" style="display:none;"></span>
+        <div class="modulo-card">
+            <h2 id="tituloConsultorio">Clínico Geral - Consultório 1</h2>
+            <div id="statusConexao" class="paciente-sub"
+                style="color: var(--status-sucesso); margin-bottom: 20px; font-weight: 600;">• Online</div>
+
+            <div class="paciente-atual-box">
+                <div class="paciente-sub">Paciente da Vez:</div>
+                <div id="nomePaciente" class="nome-paciente-actual">Aguardando chamada...</div>
+
+                <div style="margin-top: 15px; text-align: left; display: inline-block;">
+                    <div class="paciente-sub" id="docPaciente">CPF/SUS: --</div>
+                    <div class="paciente-sub" id="maePaciente">Mãe: --</div>
+                    <div class="paciente-sub" id="idadePaciente">Idade: --</div>
+                </div>
             </div>
 
-            <div class="acoes-container">
-                <button id="btnChamar" type="button" class="btn btn-chamar" onclick="chamarProximo()">CHAMAR
-                    PRÓXIMO</button>
-                <button id="btnIniciar" class="btn btn-iniciar desativado" onclick="alterarStatus('INICIAR')">INICIAR
-                    ATENDIMENTO</button>
-                <button id="btnAusente" class="btn btn-ausente desativado" onclick="alterarStatus('AUSENTE')">NÃO
-                    COMPARECEU (AUSENTE)</button>
-                <button id="btnFinalizar" class="btn btn-finalizar desativado"
-                    onclick="alterarStatus('FINALIZAR')">CONCLUIR ATENDIMENTO</button>
+            <div class="controles-acoes">
+                <button id="btnChamar" class="btn-medico btn-chamar" onclick="chamarProximo()">CHAMAR PRÓXIMO</button>
+                <button id="btnIniciar" class="btn-medico btn-iniciar btn-disabled" onclick="alterarStatus('INICIAR')"
+                    disabled>INICIAR ATENDIMENTO</button>
+                <button id="btnAusente" class="btn-medico" style="background-color: #fff; color: #000;"
+                    onclick="alterarStatus('AUSENTE')" disabled>NÃO COMPARECEU (AUSENTE)</button>
+                <button id="btnFinalizar" class="btn-medico btn-finalizar btn-disabled"
+                    onclick="alterarStatus('FINALIZADO')" disabled>CONCLUIR ATENDIMENTO</button>
             </div>
         </div>
+
+        <div class="modulo-card">
+            <h2>Fila de Espera da Especialidade</h2>
+            <div id="containerFila" class="fila-lista">
+                <div class="paciente-sub" style="text-align: center; padding: 20px;">Nenhum paciente na fila.</div>
+            </div>
+        </div>
+
     </div>
 
     <script src="/static/js/medico.js"></script>

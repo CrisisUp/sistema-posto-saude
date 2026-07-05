@@ -1,133 +1,147 @@
-* {
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-  margin: 0;
-  padding: 0;
-}
+/* ==============================================================================
+   TV.CSS - Layout de Alta Visibilidade para Painel de Sala de Espera
+   ============================================================================== */
 
 body {
-  background-color: #1a252f;
-  color: white;
+  font-family: var(--fonte-principal);
+  background-color: var(--bg-principal);
+  color: var(--texto-principal);
+  margin: 0;
+  padding: 20px;
   height: 100vh;
   display: flex;
-  flex-direction: column;
+  gap: 20px;
   overflow: hidden;
 }
 
-/* Topo do Painel */
-header {
-  background: #2c3e50;
-  padding: 20px;
-  text-align: center;
-  border-bottom: 5px solid #3498db;
-  z-index: 10;
-}
-
-header h1 {
-  font-size: 28px;
-  letter-spacing: 2px;
-}
-
-/* Layout Dividido: Esquerda (Atual) e Direita (Histórico) */
-.layout-principal {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 2.5fr 1fr;
-  overflow: hidden;
-}
-
-/* Área Principal da Chamada Atual */
-.chamada-container {
+/* --- Container Principal (Destaque da Chamada) --- */
+.painel-principal {
+  flex: 2;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  text-align: center;
   padding: 40px;
-  border-right: 2px solid #2c3e50;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  text-align: center;
 }
 
-.label-chamada {
-  font-size: 26px;
-  color: #bdc3c7;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  margin-bottom: 15px;
-}
-
-.nome-paciente {
-  font-size: 65px;
-  font-weight: bold;
-  color: #f1c40f;
-  margin-bottom: 25px;
-  transition: all 0.3s;
-  word-break: break-word;
-  line-height: 1.2;
-}
-
-.local-destino {
-  font-size: 45px;
-  background: #e74c3c;
-  padding: 12px 50px;
-  border-radius: 10px;
-  font-weight: bold;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-/* Barra Lateral do Histórico */
-.historico-container {
-  background: #2c3e50;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.historico-titulo {
-  font-size: 20px;
+.subtitulo-chamada {
+  font-size: 24px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: #3498db;
-  font-weight: bold;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #1a252f;
-  margin-bottom: 15px;
-  text-align: center;
+  color: var(--texto-secundario);
+  margin-bottom: 20px;
+}
+
+.nome-paciente-destaque {
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--status-alerta); /* Usa a cor de alerta para destacar o nome */
+  margin-bottom: 30px;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.sala-destino {
+  display: none; /* Controlado dinamicamente pelo JS */
+  background-color: var(--status-erro); /* Vermelho/Laranja de atenção */
+  color: var(--texto-principal);
+  font-size: 48px;
+  font-weight: 700;
+  padding: 15px 40px;
+  border-radius: var(--radius-card);
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+  text-transform: uppercase;
+}
+
+/* --- Container Lateral (Histórico de Últimas Chamadas) --- */
+.painel-lateral {
+  flex: 1;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.titulo-lateral {
+  font-size: 22px;
+  color: var(--texto-principal);
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--cor-borda);
+  padding-bottom: 10px;
+  text-transform: uppercase;
 }
 
 .historico-lista {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
+  overflow-y: auto;
 }
 
-/* Item do Histórico */
 .historico-item {
-  background: #1a252f;
+  background-color: var(--bg-input);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--radius-paged);
   padding: 15px;
-  border-radius: 6px;
-  border-left: 5px solid #bdc3c7;
-  animation: entrar-historico 0.5s ease-out;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.historico-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .historico-nome {
   font-size: 18px;
-  font-weight: bold;
-  color: #ffffff;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 700;
+  color: var(--texto-principal);
 }
 
 .historico-sala {
   font-size: 14px;
-  color: #bdc3c7;
-  margin-top: 4px;
+  color: var(--texto-secundario);
+  font-weight: 600;
 }
 
-/* Animações */
-@keyframes entrar-historico {
+.historico-hora {
+  font-size: 16px;
+  color: var(--cor-primaria);
+  font-weight: 700;
+}
+
+/* ==============================================================================
+   ANIMAÇÕES (Efeitos visuais para prender a atenção do paciente)
+   ============================================================================== */
+
+/* Efeito de piscar alternando entre a cor de alerta e o branco */
+.piscar {
+  animation: efeitoPiscar 1s ease-in-out infinite alternate;
+}
+
+@keyframes efeitoPiscar {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Efeito suave de entrada para novos itens no histórico lateral */
+@keyframes slideIn {
   from {
     opacity: 0;
     transform: translateX(30px);
@@ -135,20 +149,5 @@ header h1 {
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-.piscar {
-  animation: efeito-pisca 0.5s alternate infinite;
-}
-
-@keyframes efeito-pisca {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0.4;
-    transform: scale(1.01);
   }
 }

@@ -23,7 +23,6 @@ class PacienteCadastro(BaseModel):
     @field_validator('tipo_documento')
     @classmethod
     def validar_tipo(cls, valor: str) -> str:
-        # Padroniza para maiúsculo e remove espaços extras
         tipo = valor.upper().strip()
         if tipo not in ["CPF", "SUS"]:
             raise ValueError("O tipo de documento deve ser explicitamente 'CPF' ou 'SUS'.")
@@ -32,17 +31,14 @@ class PacienteCadastro(BaseModel):
     @field_validator('nome_paciente', 'nome_mae')
     @classmethod
     def evitar_caracteres_maliciosos(cls, valor: str) -> str:
-        # Remove tags HTML/Script simples para mitigar ataques de injeção visual (XSS)
         nome_limpo = re.sub(r'<[^>]*>', '', valor).strip()
         if not nome_limpo:
             raise ValueError("O nome inserido é inválido.")
         return nome_limpo
 
-    # Model Validator analisa o objeto inteiro combinando os campos de forma inteligente
     @model_validator(mode='after')
     def validar_documento_por_tipo(self) -> 'PacienteCadastro':
         tipo = self.tipo_documento
-        # Limpa o documento deixando apenas os dígitos numéricos
         doc_limpo = re.sub(r'\D', '', self.documento_unico)
         
         if tipo == "CPF" and len(doc_limpo) != 11:
@@ -51,7 +47,6 @@ class PacienteCadastro(BaseModel):
         if tipo == "SUS" and len(doc_limpo) != 15:
             raise ValueError("Para o tipo SUS, o documento deve conter exatamente 15 dígitos numéricos.")
             
-        # Atualiza o campo interno já com o valor limpo e higienizado
         self.documento_unico = doc_limpo
         return self
 
@@ -64,7 +59,6 @@ class AtendimentoRepository:
         self.db = DatabaseConnection
 
     def inserir_na_fila(self, paciente: PacienteCadastro) -> None:
-        # 🔒 CRIPTOGRAFIA EM REPOUSO: Transforma o CPF/SUS limpo em bytes e cifra
         documento_bytes = paciente.documento_unico.encode('utf-8')
         documento_cifrado = fernet.encrypt(documento_bytes).decode('utf-8')
 
@@ -94,11 +88,9 @@ class AtendimentoRepository:
                 
             dados = dict(resultado)
             
-            # 🔓 DESCRIPTOGRAFIA EM TRÂNSITO COM MÁSCARA EXPLICÍTICA
             try:
                 doc_descifrado = fernet.decrypt(dados["documento_unico"].encode('utf-8')).decode('utf-8')
                 
-                # Aplica a máscara cirúrgica baseando-se no tipo salvo de forma clara no banco
                 if dados["tipo_documento"] == "CPF":
                     dados["documento_unico"] = f"{doc_descifrado[:3]}.***.***-{doc_descifrado[-2:]}"
                 elif dados["tipo_documento"] == "SUS":
@@ -113,7 +105,6 @@ class AtendimentoRepository:
     def atualizar_status_e_obter_nome(self, atendimento_id: int, sala: str) -> Optional[str]:
         with self.db.obter_conexao() as conn:
             cursor = conn.cursor()
-            # 🔒 Agora gravamos a sala exata que realizou a chamada
             cursor.execute("""
                 UPDATE atendimentos 
                 SET status = 'CHAMADO', chamado_em = CURRENT_TIMESTAMP, sala_atendimento = ? 
@@ -130,7 +121,7 @@ class AtendimentoRepository:
             cursor = conn.cursor()
             if acao == "INICIAR":
                 cursor.execute("UPDATE atendimentos SET status = 'EM_ATENDIMENTO' WHERE id = ?", (atendimento_id,))
-            elif acao == "FINALIZAR":
+            elif acao == "FINALIZADO":  # 🚨 AJUSTADO: Garante compatibilidade total com o log
                 cursor.execute("UPDATE atendimentos SET status = 'FINALIZADO' WHERE id = ?", (atendimento_id,))
             elif acao == "AUSENTE":
                 cursor.execute("""
@@ -141,26 +132,58 @@ class AtendimentoRepository:
             conn.commit()
 
     def obter_ultimo_chamado(self) -> Optional[Dict[str, Any]]:
-            with self.db.obter_conexao() as conn:
-                cursor = conn.cursor()
-                # Busca o paciente que foi chamado mais recentemente
-                cursor.execute("""
-                    SELECT * FROM atendimentos 
-                    WHERE status = 'CHAMADO'
-                    ORDER BY chamado_em DESC
-                    LIMIT 1
-                """)
-                resultado = cursor.fetchone()
+        with self.db.obter_conexao() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM atendimentos 
+                WHERE status = 'CHAMADO'
+                ORDER BY chamado_em DESC
+                LIMIT 1
+            """)
+            resultado = cursor.fetchone()
+            
+            if not resultado:
+                return None
                 
-                if not resultado:
-                    return None
-                    
-                dados = dict(resultado)
+            dados = dict(resultado)
+            
+            try:
+                dados["documento_unico"] = fernet.decrypt(dados["documento_unico"].encode('utf-8')).decode('utf-8')
+            except Exception:
+                dados["documento_unico"] = "Erro"
                 
-                # Decifra o documento apenas para manter o padrão (mesmo que a TV não mostre o CPF)
+            return dados
+            
+    # 🚨 CORREÇÃO: Método devidamente indentado e utilizando o motor Fernet correto
+    def buscar_fila_por_especialidade(self, fireplace_id: int) -> List[Dict[str, Any]]:
+        """Busca no banco SQLite os pacientes aguardando atendimento."""
+        with self.db.obter_conexao() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                """
+                SELECT id, nome_paciente, tipo_documento, documento_unico, gravidade 
+                FROM atendimentos 
+                WHERE especialidade_id = ? AND status = 'AGUARDANDO'
+                ORDER BY gravidade DESC, id ASC
+                """,
+                (fireplace_id,)
+            )
+            
+            colunas = [col[0] for col in cursor.description]
+            resultados = [dict(zip(colunas, row)) for row in cursor.fetchall()]
+            
+            # Descriptografa os documentos em trânsito antes de mandar ao frontend
+            for paciente in resultados:
                 try:
-                    dados["documento_unico"] = fernet.decrypt(dados["documento_unico"].encode('utf-8')).decode('utf-8')
+                    doc_descifrado = fernet.decrypt(paciente["documento_unico"].encode('utf-8')).decode('utf-8')
+                    if paciente["tipo_documento"] == "CPF":
+                        paciente["documento_unico"] = f"{doc_descifrado[:3]}.***.***-{doc_descifrado[-2:]}"
+                    elif paciente["tipo_documento"] == "SUS":
+                        paciente["documento_unico"] = f"{doc_descifrado[:3]}.****.****.{doc_descifrado[-4:]}"
+                    else:
+                        paciente["documento_unico"] = f"{doc_descifrado[:3]}***"
                 except Exception:
-                    dados["documento_unico"] = "Erro"
-                    
-                return dados
+                    paciente["documento_unico"] = "Dado protegido"
+                        
+            return resultados
