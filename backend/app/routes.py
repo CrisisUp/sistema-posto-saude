@@ -89,3 +89,14 @@ def obter_ultima_chamada():
         "nome": ultimo["nome_paciente"],
         "sala": f"Consultório {sala_salva}"
     }
+
+@router.get("/tela-tv", response_class=HTMLResponse)
+def tela_tv():
+    with open(os.path.join(TEMPLATES_DIR, "tv.html"), "r", encoding="utf-8") as f:
+        return f.read()
+
+# 🚨 ADICIONE ESTA ROTA AQUI:
+@router.get("/tela-recepcao", response_class=HTMLResponse)
+def tela_recepcao():
+    with open(os.path.join(TEMPLATES_DIR, "recepcao.html"), "r", encoding="utf-8") as f:
+        return f.read()

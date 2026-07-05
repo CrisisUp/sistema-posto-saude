@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepção - Cadastro de Paciente</title>
+    <link rel="stylesheet" href="/static/css/recepcao.css">
+</head>
+
+<body>
+
+    <div class="cadastro-container">
+        <h2>Triagem e Cadastro de Paciente</h2>
+
+        <form id="formCadastro">
+            <div class="campo-grupo">
+                <label for="nome_paciente">Nome do Paciente:</label>
+                <input type="text" id="nome_paciente" required placeholder="Nome completo">
+            </div>
+
+            <div class="campo-grupo-inline">
+                <div class="campo-grupo">
+                    <label for="tipo_documento">Tipo de Identificação:</label>
+                    <select id="tipo_documento" onchange="ajustarPlaceholderDocumento()">
+                        <option value="CPF">CPF</option>
+                        <option value="SUS">Cartão SUS</option>
+                    </select>
+                </div>
+
+                <div class="campo-grupo">
+                    <label for="documento_unico">Número do Documento:</label>
+                    <input type="text" id="documento_unico" required placeholder="000.000.000-00">
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <label for="nome_mae">Nome da Mãe:</label>
+                <input type="text" id="nome_mae" required placeholder="Nome completo da mãe">
+            </div>
+
+            <div class="campo-grupo-inline">
+                <div class="campo-grupo">
+                    <label for="data_nascimento">Data de Nascimento:</label>
+                    <input type="date" id="data_nascimento" required>
+                </div>
+
+                <div class="campo-grupo">
+                    <label for="gravidade">Classificação de Risco (Gravidade):</label>
+                    <select id="gravidade" required>
+                        <option value="1">1 - Azul (Não Urgente)</option>
+                        <option value="2">2 - Verde (Pouco Urgente)</option>
+                        <option value="3">3 - Amarelo (Urgente)</option>
+                        <option value="4">4 - Laranja (Muito Urgente)</option>
+                        <option value="5">5 - Vermelho (Emergência Viva)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <label for="especialidade_id">Especialidade Médica:</label>
+                <select id="especialidade_id" required>
+                    <option value="1">Clínica Geral (Consultório 1)</option>
+                    <option value="2">Pediatria (Consultório 2)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-enviar">Inserir Paciente na Fila</button>
+        </form>
+
+        <div id="mensagemFeedback" class="feedback-oculto"></div>
+    </div>
+
+    <scrip src="/static/js/recepcao.js">
+        </script>
+</body>
+
+</html>
