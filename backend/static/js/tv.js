@@ -4,80 +4,145 @@ const WS_URL = `${PROTOCOLO_WS}//${window.location.hostname}:${window.location.p
 let socket;
 let historicoChamadas = [];
 
+// --- FUNÇÃO DE RENDERIZAÇÃO DO HISTÓRICO ---
+function renderizarHistorico() {
+  const container =
+    document.getElementById("historicoContainer") ||
+    document.querySelector(".historico-lista") ||
+    document.getElementById("historico");
+  if (!container) {
+    console.warn("Elemento container do histórico não foi localizado no HTML.");
+    return;
+  }
+
+  // Limpa a lista anterior
+  container.innerHTML = "";
+
+  // Renderiza os últimos pacientes chamados
+  historicoChamadas.forEach((paciente) => {
+    const item = document.createElement("div");
+    item.className = "historico-item";
+    item.innerHTML = `
+      <div class="historico-info">
+        <span class="historico-nome">${paciente.nome}</span>
+        <span class="historico-sala">${paciente.sala}</span>
+      </div>
+      <span class="historico-hora">${paciente.hora}</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
 function conectarWebSocket() {
   socket = new WebSocket(WS_URL);
 
+  // --- SINCRONIZAÇÃO DE ESTADO INICIAL (ONOPEN) ---
+  socket.onopen = async function () {
+    console.log("Conectado ao WebSocket. Sincronizando estado atual...");
+    try {
+      const resposta = await fetch(
+        `${window.location.protocol}//${window.location.hostname}:${window.location.port}/medico/ultima-chamada`,
+      );
+      if (resposta.ok) {
+        const dados = await resposta.json();
+
+        if (dados && dados.nome) {
+          const elementoNome = document.getElementById("painelNome");
+          const elementoSala = document.getElementById("painelSala");
+
+          if (elementoNome && elementoSala) {
+            elementoNome.innerText = dados.nome.toUpperCase();
+            elementoSala.innerText = dados.sala.toUpperCase();
+            elementoSala.style.display = "block";
+          }
+        }
+      }
+    } catch (erro) {
+      console.error("Falha ao recuperar última chamada do servidor:", erro);
+    }
+  };
+
+  // --- TRATAMENTO DO TEMPO REAL (ONMESSAGE) ---
   socket.onmessage = function (event) {
-    const dados = JSON.parse(event.data);
+    console.log("Chamada recebida em tempo real:", event.data);
+    try {
+      const dados = JSON.parse(event.data);
 
-    const elementoNome = document.getElementById("painelNome");
-    const elementoSala = document.getElementById("painelSala");
+      const elementoNome = document.getElementById("painelNome");
+      const elementoSala = document.getElementById("painelSala");
 
-    // Lógica do histórico com carimbo de hora
-    if (elementoSala.style.display === "block") {
-      const agora = new Date();
-      const horaFormatada = agora.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const pacienteAntigo = {
-        nome: elementoNome.innerText,
-        sala: elementoSala.innerText,
-        hora: horaFormatada,
-      };
-
-      historicoChamadas.unshift(pacienteAntigo);
-
-      if (historicoChamadas.length > 5) {
-        historicoChamadas.pop();
+      if (!elementoNome || !elementoSala) {
+        return;
       }
 
-      renderizarHistorico();
+      const nomeAtual = elementoNome.innerText.trim().toUpperCase();
+
+      // 🔄 GESTÃO DE HISTÓRICO CORRIGIDA: Testa contra strings vazias ou padrões de espera de forma insensível a maiúsculas
+      if (
+        elementoSala.style.display === "block" &&
+        nomeAtual !== "" &&
+        !nomeAtual.includes("AGUARDANDO") &&
+        !nomeAtual.includes("NENHUM")
+      ) {
+        const agora = new Date();
+        const horaFormatada = agora.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const pacienteAntigo = {
+          nome: elementoNome.innerText,
+          sala: elementoSala.innerText,
+          hora: horaFormatada,
+        };
+
+        // Evita duplicar o mesmo paciente seguido no histórico se o botão for clicado duas vezes
+        if (
+          historicoChamadas.length === 0 ||
+          historicoChamadas[0].nome !== pacienteAntigo.nome
+        ) {
+          historicoChamadas.unshift(pacienteAntigo);
+          if (historicoChamadas.length > 5) {
+            historicoChamadas.pop();
+          }
+          renderizarHistorico();
+        }
+      }
+
+      // 📺 ATUALIZAÇÃO DO PAINEL PRINCIPAL
+      elementoNome.innerText = dados.nome.toUpperCase();
+      elementoSala.innerText = dados.sala.toUpperCase();
+      elementoSala.style.display = "block";
+
+      // Animações visuais
+      elementoNome.classList.add("piscar");
+      elementoSala.classList.add("piscar");
+
+      try {
+        tocarSomChamada();
+      } catch (audioErr) {
+        console.warn("Som bloqueado pelo navegador:", audioErr);
+      }
+
+      setTimeout(() => {
+        elementoNome.classList.remove("piscar");
+        elementoSala.classList.remove("piscar");
+      }, 6000);
+    } catch (erroGeral) {
+      console.error("Erro ao processar o onmessage:", erroGeral);
     }
-
-    // Atualiza a chamada em destaque
-    elementoNome.innerText = dados.nome.toUpperCase();
-    elementoSala.innerText = dados.sala.toUpperCase();
-    elementoSala.style.display = "block";
-
-    elementoNome.classList.add("piscar");
-    elementoSala.classList.add("piscar");
-
-    tocarSomChamada();
-
-    setTimeout(() => {
-      elementoNome.classList.remove("piscar");
-      elementoSala.classList.remove("piscar");
-    }, 6000);
   };
 
   socket.onclose = function () {
+    console.log("WebSocket desconectado. Tentando reconectar em 3 segundos...");
     setTimeout(conectarWebSocket, 3000);
   };
-}
-
-function renderizarHistorico() {
-  const listaHTML = document.getElementById("listaHistorico");
-  listaHTML.innerHTML = "";
-
-  historicoChamadas.forEach((paciente) => {
-    const itemDiv = document.createElement("div");
-    itemDiv.className = "historico-item";
-    itemDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="historico-nome" style="max-width: 70%;">${paciente.nome}</div>
-                <span style="font-size: 13px; color: #f1c40f; font-weight: bold;">${paciente.hora}</span>
-            </div>
-            <div class="historico-sala">${paciente.sala}</div>
-        `;
-    listaHTML.appendChild(itemDiv);
-  });
 }
 
 function tocarSomChamada() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") return;
 
     const oscilador1 = audioCtx.createOscillator();
     const ganho1 = audioCtx.createGain();
@@ -93,23 +158,23 @@ function tocarSomChamada() {
     oscilador1.stop(audioCtx.currentTime + 0.4);
 
     setTimeout(() => {
-      const oscilador2 = audioCtx.createOscillator();
-      const ganho2 = audioCtx.createGain();
-      oscilador2.type = "sine";
-      oscilador2.frequency.setValueAtTime(659.25, audioCtx.currentTime);
-      oscilador2.connect(ganho2);
-      ganho2.connect(audioCtx.destination);
-      oscilador2.start();
-      ganho2.gain.exponentialRampToValueAtTime(
-        0.00001,
-        audioCtx.currentTime + 0.5,
-      );
-      oscilador2.stop(audioCtx.currentTime + 0.5);
+      try {
+        const oscilador2 = audioCtx.createOscillator();
+        const ganho2 = audioCtx.createGain();
+        oscilador2.type = "sine";
+        oscilador2.frequency.setValueAtTime(659.25, audioCtx.currentTime);
+        oscilador2.connect(ganho2);
+        ganho2.connect(audioCtx.destination);
+        oscilador2.start();
+        ganho2.gain.exponentialRampToValueAtTime(
+          0.00001,
+          audioCtx.currentTime + 0.5,
+        );
+        oscilador2.stop(audioCtx.currentTime + 0.5);
+      } catch (e) {}
     }, 150);
-  } catch (e) {
-    console.log("Áudio bloqueado.");
-  }
+  } catch (e) {}
 }
 
-// Inicialização automática
+// Inicializa o ciclo do app
 conectarWebSocket();

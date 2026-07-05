@@ -1,27 +1,79 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from app.database import DatabaseConnection
+from app.config import CHAVE_CRIPTOGRAFIA
+from cryptography.fernet import Fernet
+import re
 
+# Inicializa o motor de criptografia com a nossa chave secreta
+fernet = Fernet(CHAVE_CRIPTOGRAFIA)
+
+# ==============================================================================
+# CAMADA DE VALIDAÇÃO ESTREITA E HIGIENIZAÇÃO (DTO)
+# ==============================================================================
 class PacienteCadastro(BaseModel):
     nome_paciente: str
+    tipo_documento: str   # <-- Campo Explícito: 'CPF' ou 'SUS'
     documento_unico: str
     nome_mae: str
     data_nascimento: str  
     gravidade: int        
     especialidade_id: int 
 
+    @field_validator('tipo_documento')
+    @classmethod
+    def validar_tipo(cls, valor: str) -> str:
+        # Padroniza para maiúsculo e remove espaços extras
+        tipo = valor.upper().strip()
+        if tipo not in ["CPF", "SUS"]:
+            raise ValueError("O tipo de documento deve ser explicitamente 'CPF' ou 'SUS'.")
+        return tipo
+
+    @field_validator('nome_paciente', 'nome_mae')
+    @classmethod
+    def evitar_caracteres_maliciosos(cls, valor: str) -> str:
+        # Remove tags HTML/Script simples para mitigar ataques de injeção visual (XSS)
+        nome_limpo = re.sub(r'<[^>]*>', '', valor).strip()
+        if not nome_limpo:
+            raise ValueError("O nome inserido é inválido.")
+        return nome_limpo
+
+    # Model Validator analisa o objeto inteiro combinando os campos de forma inteligente
+    @model_validator(mode='after')
+    def validar_documento_por_tipo(self) -> 'PacienteCadastro':
+        tipo = self.tipo_documento
+        # Limpa o documento deixando apenas os dígitos numéricos
+        doc_limpo = re.sub(r'\D', '', self.documento_unico)
+        
+        if tipo == "CPF" and len(doc_limpo) != 11:
+            raise ValueError("Para o tipo CPF, o documento deve conter exatamente 11 dígitos numéricos.")
+        
+        if tipo == "SUS" and len(doc_limpo) != 15:
+            raise ValueError("Para o tipo SUS, o documento deve conter exatamente 15 dígitos numéricos.")
+            
+        # Atualiza o campo interno já com o valor limpo e higienizado
+        self.documento_unico = doc_limpo
+        return self
+
+
+# ==============================================================================
+# CAMADA DE REPOSITÓRIO COM CRIPTOGRAFIA E TIPO DE DOCUMENTO
+# ==============================================================================
 class AtendimentoRepository:
-    """Responsável estritamente pela persistência e comunicação com o banco de dados."""
     def __init__(self):
         self.db = DatabaseConnection
 
     def inserir_na_fila(self, paciente: PacienteCadastro) -> None:
+        # 🔒 CRIPTOGRAFIA EM REPOUSO: Transforma o CPF/SUS limpo em bytes e cifra
+        documento_bytes = paciente.documento_unico.encode('utf-8')
+        documento_cifrado = fernet.encrypt(documento_bytes).decode('utf-8')
+
         with self.db.obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO atendimentos (nome_paciente, documento_unico, nome_mae, data_nascimento, gravidade, status, especialidade_id)
-                VALUES (?, ?, ?, ?, ?, 'AGUARDANDO', ?)
-            """, (paciente.nome_paciente, paciente.documento_unico, paciente.nome_mae, paciente.data_nascimento, paciente.gravidade, paciente.especialidade_id))
+                INSERT INTO atendimentos (nome_paciente, tipo_documento, documento_unico, nome_mae, data_nascimento, gravidade, status, especialidade_id)
+                VALUES (?, ?, ?, ?, ?, ?, 'AGUARDANDO', ?)
+            """, (paciente.nome_paciente, paciente.tipo_documento, documento_cifrado, paciente.nome_mae, paciente.data_nascimento, paciente.gravidade, paciente.especialidade_id))
             conn.commit()
 
     def buscar_proximo_da_fila(self, especialidade_id: int) -> Optional[Dict[str, Any]]:
@@ -36,12 +88,38 @@ class AtendimentoRepository:
                 LIMIT 1
             """, (especialidade_id,))
             resultado = cursor.fetchone()
-            return dict(resultado) if resultado else None
+            
+            if not resultado:
+                return None
+                
+            dados = dict(resultado)
+            
+            # 🔓 DESCRIPTOGRAFIA EM TRÂNSITO COM MÁSCARA EXPLICÍTICA
+            try:
+                doc_descifrado = fernet.decrypt(dados["documento_unico"].encode('utf-8')).decode('utf-8')
+                
+                # Aplica a máscara cirúrgica baseando-se no tipo salvo de forma clara no banco
+                if dados["tipo_documento"] == "CPF":
+                    dados["documento_unico"] = f"{doc_descifrado[:3]}.***.***-{doc_descifrado[-2:]}"
+                elif dados["tipo_documento"] == "SUS":
+                    dados["documento_unico"] = f"{doc_descifrado[:3]}.****.****.{doc_descifrado[-4:]} (SUS)"
+                else:
+                    dados["documento_unico"] = f"{doc_descifrado[:3]}************"
+            except Exception:
+                dados["documento_unico"] = "Erro ao decifrar dado"
 
-    def atualizar_status_e_obter_nome(self, atendimento_id: int) -> Optional[str]:
+            return dados
+
+    def atualizar_status_e_obter_nome(self, atendimento_id: int, sala: str) -> Optional[str]:
         with self.db.obter_conexao() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE atendimentos SET status = 'CHAMADO', chamado_em = CURRENT_TIMESTAMP WHERE id = ?", (atendimento_id,))
+            # 🔒 Agora gravamos a sala exata que realizou a chamada
+            cursor.execute("""
+                UPDATE atendimentos 
+                SET status = 'CHAMADO', chamado_em = CURRENT_TIMESTAMP, sala_atendimento = ? 
+                WHERE id = ?
+            """, (sala, atendimento_id))
+            
             cursor.execute("SELECT nome_paciente FROM atendimentos WHERE id = ?", (atendimento_id,))
             resultado = cursor.fetchone()
             conn.commit()
@@ -61,3 +139,28 @@ class AtendimentoRepository:
                     WHERE id = ?
                 """, (atendimento_id,))
             conn.commit()
+
+    def obter_ultimo_chamado(self) -> Optional[Dict[str, Any]]:
+            with self.db.obter_conexao() as conn:
+                cursor = conn.cursor()
+                # Busca o paciente que foi chamado mais recentemente
+                cursor.execute("""
+                    SELECT * FROM atendimentos 
+                    WHERE status = 'CHAMADO'
+                    ORDER BY chamado_em DESC
+                    LIMIT 1
+                """)
+                resultado = cursor.fetchone()
+                
+                if not resultado:
+                    return None
+                    
+                dados = dict(resultado)
+                
+                # Decifra o documento apenas para manter o padrão (mesmo que a TV não mostre o CPF)
+                try:
+                    dados["documento_unico"] = fernet.decrypt(dados["documento_unico"].encode('utf-8')).decode('utf-8')
+                except Exception:
+                    dados["documento_unico"] = "Erro"
+                    
+                return dados

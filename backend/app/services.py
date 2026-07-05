@@ -4,22 +4,29 @@ from typing import List
 class GerenciadorTV:
     """Gerencia o canal de comunicação em tempo real com as TVs via WebSocket."""
     def __init__(self):
-        self.conexoes_ativas: List[WebSocket] = []
+        # Mantemos o nome padronizado para bater com as rotas
+        self.conexoes: List[WebSocket] = []
 
     async def conectar(self, websocket: WebSocket):
         await websocket.accept()
-        self.conexoes_ativas.append(websocket)
+        self.conexoes.append(websocket)
 
     def desconectar(self, websocket: WebSocket):
-        if websocket in self.conexoes_ativas:
-            self.conexoes_ativas.remove(websocket)
+        if websocket in self.conexoes:
+            self.conexoes.remove(websocket)
 
     async def enviar_chamada_tv(self, nome_paciente: str, sala: str):
-        if not self.conexoes_ativas:
+        if not self.conexoes:
             return
         payload = {"nome": nome_paciente, "sala": sala}
-        for conexao in list(self.conexoes_ativas):
+        # Transmite em broadcast para todas as TVs conectadas na mesma instância de memória
+        for conexao in list(self.conexoes):
             try:
                 await conexao.send_json(payload)
             except Exception:
                 self.desconectar(conexao)
+
+# ==============================================================================
+# 🚨 PADRÃO SINGLETON: CRIA A INSTÂNCIA ÚNICA GLOBAL COMPARTILHADA
+# ==============================================================================
+gerenciador_tv = GerenciadorTV()

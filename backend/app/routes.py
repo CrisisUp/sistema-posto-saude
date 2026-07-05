@@ -3,14 +3,17 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from typing import Optional
 from app.repositories import AtendimentoRepository, PacienteCadastro
-from app.services import GerenciadorTV
+# 🚨 ALTERADO: Importando a instância global gerenciador_tv em minúsculo
+from app.services import gerenciador_tv 
 from app.config import TEMPLATES_DIR
 
 # O APIRouter do FastAPI permite criar rotas em arquivos separados e injetá-las no app principal
 router = APIRouter()
 
 repository = AtendimentoRepository()
-gerenciador_tv = GerenciadorTV()
+
+# 🚨 REMOVIDO: gerenciador_tv = GerenciadorTV() 
+# Agora usamos a instância única vinda do services para unificar as memórias!
 
 @router.get("/")
 def index():
@@ -32,12 +35,16 @@ def proximo(especialidade_id: int):
     return paciente
 
 @router.post("/medico/chamar/{atendimento_id}")
-async def chamar(atendimento_id: int, sala: Optional[str] = None):
-    nome_paciente = repository.atualizar_status_e_obter_nome(atendimento_id)
+async def chamar(atendimento_id: int, sala: str):
+    nome_paciente = repository.atualizar_status_e_obter_nome(atendimento_id, sala)
     if not nome_paciente:
         return {"status": "erro", "mensagem": "Atendimento não encontrado."}
     
     sala_final = sala if sala and "Consultório" in sala else f"Consultório {sala or '1'}"
+    
+    # Adicionando um print temporário para debug sênior no terminal
+    print(f"--- BROADCAST: Enviando para {len(gerenciador_tv.conexoes)} TVs na memória ---")
+    
     await gerenciador_tv.enviar_chamada_tv(nome_paciente, sala_final)
     return {"status": "sucesso", "mensagem": "Paciente chamado!"}
 
@@ -47,13 +54,16 @@ def status(atendimento_id: int, acao: str):
     return {"status": "sucesso"}
 
 @router.websocket("/ws/tv")
-async def ws_tv(websocket: WebSocket):
+async def websocket_tv(websocket: WebSocket):
+    # Aceita a conexão da TV na instância unificada
     await gerenciador_tv.conectar(websocket)
+    print(f"--- TV CONECTADA: Total de TVs ativas = {len(gerenciador_tv.conexoes)} ---")
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         gerenciador_tv.desconectar(websocket)
+        print("--- TV DESCONECTADA ---")
 
 # Rotas de renderização atualizadas para buscar na pasta templates/
 @router.get("/tela-medico", response_class=HTMLResponse)
@@ -65,3 +75,17 @@ def tela_medico():
 def tela_tv():
     with open(os.path.join(TEMPLATES_DIR, "tv.html"), "r", encoding="utf-8") as f:
         return f.read()
+    
+@router.get("/medico/ultima-chamada")
+def obter_ultima_chamada():
+    ultimo = repository.obter_ultimo_chamado()
+    if not ultimo:
+        return {"mensagem": "Nenhuma chamada ativa no momento"}
+
+    # Pega a sala que ficou salva no banco! Se estiver nula, assume Consultório 1
+    sala_salva = ultimo.get("sala_atendimento") or "1"
+
+    return {
+        "nome": ultimo["nome_paciente"],
+        "sala": f"Consultório {sala_salva}"
+    }

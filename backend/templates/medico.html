@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
     <title>Consultório Médico - Painel de Atendimento</title>
     <link rel="stylesheet" href="/static/css/medico.css">
 </head>
+
 <body>
 
     <header>
@@ -25,14 +29,19 @@
             </div>
 
             <div class="acoes-container">
-                <button id="btnChamar" type="button" class="btn btn-chamar" onclick="chamarProximo()">CHAMAR PRÓXIMO</button>
-                <button id="btnIniciar" class="btn btn-iniciar desativado" onclick="alterarStatus('INICIAR')">INICIAR ATENDIMENTO</button>
-                <button id="btnAusente" class="btn btn-ausente desativado" onclick="alterarStatus('AUSENTE')">NÃO COMPARECEU (AUSENTE)</button>
-                <button id="btnFinalizar" class="btn btn-finalizar desativado" onclick="alterarStatus('FINALIZAR')">CONCLUIR ATENDIMENTO</button>
+                <button id="btnChamar" type="button" class="btn btn-chamar" onclick="chamarProximo()">CHAMAR
+                    PRÓXIMO</button>
+                <button id="btnIniciar" class="btn btn-iniciar desativado" onclick="alterarStatus('INICIAR')">INICIAR
+                    ATENDIMENTO</button>
+                <button id="btnAusente" class="btn btn-ausente desativado" onclick="alterarStatus('AUSENTE')">NÃO
+                    COMPARECEU (AUSENTE)</button>
+                <button id="btnFinalizar" class="btn btn-finalizar desativado"
+                    onclick="alterarStatus('FINALIZAR')">CONCLUIR ATENDIMENTO</button>
             </div>
         </div>
     </div>
 
     <script src="/static/js/medico.js"></script>
 </body>
+
 </html>
