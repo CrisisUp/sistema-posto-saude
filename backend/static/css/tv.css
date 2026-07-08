@@ -2,6 +2,12 @@
    TV.CSS - Layout de Alta Visibilidade para Painel de Sala de Espera
    ============================================================================== */
 
+:root {
+  --azul-claro: #e8f0fe;
+  --azul-destaque: #2c7be5;
+  --azul-hover: #dce8f5;
+}
+
 body {
   font-family: var(--fonte-principal);
   background-color: var(--bg-principal);
@@ -39,15 +45,15 @@ body {
 .nome-paciente-destaque {
   font-size: 64px;
   font-weight: 800;
-  color: var(--status-alerta); /* Usa a cor de alerta para destacar o nome */
+  color: var(--status-alerta);
   margin-bottom: 30px;
   word-wrap: break-word;
   max-width: 100%;
 }
 
 .sala-destino {
-  display: none; /* Controlado dinamicamente pelo JS */
-  background-color: var(--status-erro); /* Vermelho/Laranja de atenção */
+  display: none;
+  background-color: var(--status-erro);
   color: var(--texto-principal);
   font-size: 48px;
   font-weight: 700;
@@ -78,9 +84,7 @@ body {
   text-transform: uppercase;
 }
 
-/* ===== MELHORIAS PARA O HISTÓRICO ===== */
-
-/* Container principal do histórico */
+/* ===== HISTÓRICO ===== */
 .historico-lista {
   display: flex;
   flex-direction: column;
@@ -108,7 +112,6 @@ body {
   transform: translateX(5px);
 }
 
-/* Informações do paciente */
 .historico-item .paciente-info {
   display: flex;
   flex-direction: column;
@@ -134,7 +137,6 @@ body {
   font-size: 0.9rem;
 }
 
-/* Horário */
 .historico-item .chamada-hora {
   font-size: 0.85rem;
   font-weight: 700;
@@ -145,18 +147,32 @@ body {
   white-space: nowrap;
 }
 
-/* Badge "Nova" para as 2 últimas chamadas */
+/* ===== DESTAQUE DAS 2 ÚLTIMAS CHAMADAS (AZUL CLARINHO) ===== */
 .historico-item.nova-chamada {
-  border-left-color: #ff6b6b;
-  background: linear-gradient(90deg, rgba(255, 107, 107, 0.05), transparent);
+  background: var(--azul-claro, #e8f0fe);
+  border-left-color: var(--azul-destaque, #2c7be5);
+  border-left-width: 6px;
+  box-shadow: 0 2px 12px rgba(44, 123, 229, 0.15);
+  transition: all 0.3s ease;
+}
+
+.historico-item.nova-chamada .paciente-nome {
+  color: var(--azul-destaque, #2c7be5);
+  font-weight: 700;
 }
 
 .historico-item.nova-chamada .chamada-hora {
-  background: rgba(255, 107, 107, 0.15);
-  color: #ff6b6b;
+  background: var(--azul-destaque, #2c7be5);
+  color: #ffffff;
+  font-weight: 700;
 }
 
-/* Animação de entrada */
+.historico-item.nova-chamada:hover {
+  background: var(--azul-hover, #dce8f5);
+  transform: translateX(5px);
+}
+
+/* ===== ANIMAÇÕES ===== */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -183,29 +199,7 @@ body {
   border-radius: 10px;
 }
 
-/* Responsivo */
-@media (max-width: 768px) {
-  .historico-item {
-    padding: 10px 14px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .historico-item .paciente-nome {
-    font-size: 0.95rem;
-  }
-
-  .historico-item .chamada-hora {
-    font-size: 0.75rem;
-    padding: 2px 10px;
-  }
-}
-
-/* ==============================================================================
-   ANIMAÇÕES (Efeitos visuais para prender a atenção do paciente)
-   ============================================================================== */
-
-/* Efeito de piscar alternando entre a cor de alerta e o branco */
+/* ===== PISCAR ===== */
 .piscar {
   animation: efeitoPiscar 1s ease-in-out infinite alternate;
 }
@@ -221,14 +215,42 @@ body {
   }
 }
 
-/* Efeito suave de entrada para novos itens no histórico lateral */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
+/* ===== RESPONSIVO ===== */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    padding: 10px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+
+  .painel-principal {
+    padding: 20px;
+  }
+
+  .nome-paciente-destaque {
+    font-size: 36px;
+  }
+
+  .sala-destino {
+    font-size: 28px;
+    padding: 10px 20px;
+  }
+
+  .historico-item {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .historico-item .paciente-nome {
+    font-size: 0.95rem;
+  }
+
+  .historico-item .chamada-hora {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+  }
+
+  .titulo-lateral {
+    font-size: 18px;
   }
 }
