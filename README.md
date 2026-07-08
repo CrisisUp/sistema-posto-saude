@@ -45,12 +45,38 @@ O projeto adota o modelo **Cliente-Servidor** distribuído, permitindo que múlt
 A busca pelo próximo paciente realiza o cálculo dinâmico da idade em tempo real e aplica múltiplos níveis de ordenação:
 
 ```SQL
-SELECT *, (strftime('%Y', 'now') - strftime('%Y', data_nascimento) >= 60) AS eh_idoso
+SELECT *, 
+       (date('now') >= date(data_nascimento, '+60 years')) AS eh_idoso
 FROM atendimentos
 WHERE status = 'AGUARDANDO' AND especialidade_id = ?
 ORDER BY gravidade DESC, eh_idoso DESC, criado_em ASC
 LIMIT 1;
 ```
+
+### Tabela `atendimentos`
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| id | INTEGER | Chave primária |
+| nome_paciente | TEXT | Nome completo |
+| tipo_documento | TEXT | 'CPF' ou 'SUS' |
+| documento_unico | TEXT | Número criptografado |
+| nome_mae | TEXT | Nome da mãe |
+| data_nascimento | TEXT | Formato YYYY-MM-DD |
+| gravidade | INTEGER | 1 a 5 (Manchester) |
+| especialidade_id | INTEGER | FK para especialidades |
+| status | TEXT | AGUARDANDO, CHAMADO, EM_ATENDIMENTO, FINALIZADO |
+| criado_em | TIMESTAMP | Data/hora da chegada |
+| chamado_em | TIMESTAMP | Data/hora da chamada |
+| sala_atendimento | TEXT | Consultório que chamou |
+
+### Tabela `especialidades`
+
+| Campo | Tipo | Descrição |
+| ----- | ---- | --------- |
+| id | INTEGER | Chave primária |
+| nome | TEXT | Nome da especialidade |
+| sala | TEXT | Nome da sala/consultório |
 
 ### * 2. Estratégia Baseada em Parâmetros de URL
 
@@ -75,15 +101,71 @@ python3 -m venv venv
 source venv/bin/activate  # No Windows use: venv\Scripts\activate
 ```
 
+### 🏥 Configuração de Salas/Consultórios
+
+### Salas Pré-configuradas
+
+O banco de dados já vem com 3 especialidades/salas:
+
+| ID | Especialidade | Sala |
+| -- | ------------- | ---- |
+| 1 | Clínico Geral | Consultório 1 |
+| 2 | Pediatria | Consultório 2 |
+| 3 | Odontologia | Sala de Trauma |
+
+### Adicionando Novas Salas
+
+Para criar mais consultórios (ex: Consultório 3), execute no banco:
+
+```sql
+INSERT INTO especialidades (nome, sala) 
+VALUES ('Ortopedia', 'Consultório 3');
+```
+
+O sistema aceita qualquer número de sala via parâmetro ?sala=X.
+
+Se a sala existir no banco, o paciente será direcionado corretamente
+
+Se não existir, o sistema ainda funciona, mas o paciente será chamado para o número informado
+
+Exemplo de uso:
+
+```text
+http://192.168.1.6:8000/tela-medico?sala=3   # Consultório 3
+http://192.168.1.6:8000/tela-medico?sala=10  # Consultório 10
+```
+
+### 📂 Estrutura do Projeto
+
+```text
+.
+├── backend/
+│   ├── app/
+│   │   ├── config.py          # Configurações e chave de criptografia
+│   │   ├── database.py        # Conexão com SQLite
+│   │   ├── repositories.py    # Queries e acesso ao banco
+│   │   ├── routes.py          # Endpoints da API
+│   │   └── services.py        # Lógica de negócio (WebSocket)
+│   ├── static/
+│   │   ├── css/               # Estilos das telas
+│   │   └── js/                # Lógica dos clientes
+│   ├── templates/             # HTML das telas
+│   └── main.py                # Ponto de entrada
+├── banco/
+│   ├── estrutura.sql          # Schema do banco
+│   └── posto_saude.db         # Banco de dados SQLite
+└── inserir_pacientes.py       # Script para popular dados de teste
+```
+
 ### * 2. Instalar as Dependências do Ecossistema
 
 ```bash
-pip install fastapi "uvicorn[standard]" websockets
+pip install fastapi "uvicorn[standard]" websockets cryptography
 ```
 
 ### * 3. Inicializar o Servidor na Rede Local
 
-Para descobrir o IP do seu computador na rede local (no macOS/Linux use ifconfig ou no Windows use ipconfig). Sabendo o seu IP (ex: 192.168.1.11), inicialize o Uvicorn liberando o host:
+Para descobrir o IP do seu computador na rede local (no macOS/Linux use ifconfig ou no Windows use `ipconfig`). Sabendo o seu IP (ex: 192.168.1.6), inicialize o Uvicorn liberando o host:
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --reload
@@ -93,11 +175,33 @@ uvicorn main:app --host 0.0.0.0 --reload
 
 Com o servidor rodando, acesse os endereços abaixo a partir de qualquer dispositivo conectado ao mesmo Wi-Fi:
 
-* Painel da TV (Sala de Espera): http://<SEU_IP_LOCAL>:8000/tela-tv
-* Painel do Médico (Consultório 1): http://<SEU_IP_LOCAL>:8000/tela-medico?sala=1
-* Painel do Médico (Consultório 2): http://<SEU_IP_LOCAL>:8000/tela-medico?sala=2
+* Painel da TV (Sala de Espera): `http://192.168.1.6:8000/tela-tv`
+* Painel do Médico (Consultório 1): `http://<SEU_IP_LOCAL>:8000/tela-medico?sala=1`
+* Painel do Médico (Consultório 2): `http://192.168.1.6:8000/tela-medico?sala=2`
+* Tela da recepção: `http://192.168.1.6:8000/tela-recepcao`
 * Documentação Automática da API (Swagger): http://<SEU_IP_LOCAL>:8000/docs
 
 Nota: Ao abrir a tela da TV, dê um clique em qualquer ponto da página para permitir que o navegador execute os bipes sonoros de notificação automaticamente.
 
+## 📡 Endpoints da API
+
+| Método | Endpoint | Descrição |
+| ------ | -------- | --------- |
+| POST | `/recepcao/cadastrar` | Cadastra novo paciente |
+| GET | `/medico/proximo/{id}` | Busca próximo paciente da fila |
+| GET | `/medico/fila/{id}` | Lista todos da fila |
+| POST | `/medico/chamar/{id}?sala=X` | Chama paciente para consultório |
+| POST | `/medico/status/{id}?acao=X` | Altera status (INICIAR/AUSENTE/FINALIZADO) |
+| GET | `/medico/ultima-chamada` | Recupera última chamada |
+| WS | `/ws/tv` | WebSocket para atualização em tempo real |
+
+## 🔐 Segurança
+
+Os documentos dos pacientes (CPF/SUS) são **criptografados** no banco de dados usando `Fernet (symmetric encryption)`, garantindo que dados sensíveis não fiquem expostos mesmo em caso de acesso direto ao arquivo SQLite.
+
 ## Desenvolvido por Cristiano Batista Pessoa 🚀
+
+`python inserir_pacientes.py`
+
+* Precisa acertar a questão dos numeros das salas maiores que 2 serem aceitas (consultório 3 por exemplo)
+* Melhorar o layout das últimas chamadas

@@ -3,32 +3,38 @@ const WS_URL = `${PROTOCOLO_WS}//${window.location.hostname}:${window.location.p
 
 let socket;
 let historicoChamadas = [];
+let ultimoPaciente = null; // ← NOVO: Guarda o paciente atual
 
 // --- FUNÇÃO DE RENDERIZAÇÃO DO HISTÓRICO ---
 function renderizarHistorico() {
-  // Busca o container correto configurado no HTML (historicoLista)
-  const container = document.getElementById("historicoLista") || document.querySelector(".historico-lista");
-  if (!container) {
-    console.warn("Elemento container do histórico não foi localizado no HTML.");
-    return;
-  }
+  const container = document.getElementById("historicoLista");
+  if (!container) return;
 
-  // Limpa a lista anterior
   container.innerHTML = "";
 
-  // Renderiza os últimos pacientes chamados utilizando o mesmo padrão visual elegante
-  historicoChamadas.forEach((paciente) => {
+  historicoChamadas.forEach((paciente, index) => {
     const item = document.createElement("div");
-    item.className = "fila-item"; // Sincronizado com o CSS estrutural
+
+    // Adiciona classe especial para as 2 últimas chamadas
+    const isNova = index < 2;
+    item.className = `historico-item ${isNova ? "nova-chamada" : ""}`;
+
+    // Formata a hora
+    const horaFormatada =
+      paciente.hora ||
+      new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
     item.innerHTML = `
-      <div class="paciente-dados">
-        <span class="paciente-nome">${paciente.nome}</span>
-        <span class="paciente-sub">${paciente.sala}</span>
-      </div>
-      <div class="paciente-dados" style="align-items: flex-end;">
-        <span class="paciente-sub" style="font-weight: 600; color: var(--cor-primaria);">${paciente.hora}</span>
-      </div>
-    `;
+            <div class="paciente-info">
+                <span class="paciente-nome">${paciente.nome}</span>
+                <span class="paciente-sala">${paciente.sala}</span>
+            </div>
+            <span class="chamada-hora">${horaFormatada}</span>
+        `;
+
     container.appendChild(item);
   });
 }
@@ -47,14 +53,26 @@ function conectarWebSocket() {
         const dados = await resposta.json();
 
         if (dados && dados.nome) {
-          // 🚨 IDs CORRIGIDOS: apontando para os novos elementos do HTML
           const elementoNome = document.getElementById("nomePacienteDestaque");
           const elementoSala = document.getElementById("salaDestino");
 
           if (elementoNome && elementoSala) {
-            elementoNome.innerText = dados.nome.toUpperCase();
-            elementoSala.innerText = dados.sala.toUpperCase();
+            const nomeFormatado = dados.nome.toUpperCase();
+            const salaFormatada = dados.sala.toUpperCase();
+
+            elementoNome.innerText = nomeFormatado;
+            elementoSala.innerText = salaFormatada;
             elementoSala.style.display = "inline-block";
+
+            // 🆕 GUARDA O PACIENTE ATUAL
+            ultimoPaciente = {
+              nome: nomeFormatado,
+              sala: salaFormatada,
+              hora: new Date().toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            };
           }
         }
       }
@@ -69,53 +87,52 @@ function conectarWebSocket() {
     try {
       const dados = JSON.parse(event.data);
 
-      // 🚨 IDs CORRIGIDOS: apontando para os novos elementos do HTML
       const elementoNome = document.getElementById("nomePacienteDestaque");
       const elementoSala = document.getElementById("salaDestino");
 
       if (!elementoNome || !elementoSala) {
-        console.warn("Elementos do painel principal não foram encontrados no HTML.");
+        console.warn(
+          "Elementos do painel principal não foram encontrados no HTML.",
+        );
         return;
       }
 
-      const nomeAtual = elementoNome.innerText.trim().toUpperCase();
+      // 🆕 FORMATA OS DADOS RECEBIDOS
+      const novoNome = dados.nome.toUpperCase();
+      const novaSala = dados.sala.toUpperCase();
 
-      // 🔄 GESTÃO DE HISTÓRICO: Verifica o estado anterior antes de sobrescrever
-      if (
-        nomeAtual !== "" &&
-        !nomeAtual.includes("AGUARDANDO") &&
-        !nomeAtual.includes("PAINEL ATIVO") &&
-        !nomeAtual.includes("NENHUM")
-      ) {
+      // 🆕 SALVA O PACIENTE ATUAL NO HISTÓRICO (USANDO OS DADOS DO WEBSOCKET)
+      if (ultimoPaciente && ultimoPaciente.nome !== novoNome) {
+        // Se o paciente atual é diferente do novo, salva no histórico
         const agora = new Date();
         const horaFormatada = agora.toLocaleTimeString("pt-BR", {
           hour: "2-digit",
           minute: "2-digit",
         });
 
-        const pacienteAntigo = {
-          nome: elementoNome.innerText,
-          sala: elementoSala.innerText,
+        // 🔥 CORREÇÃO: USA OS DADOS DO WEBSOCKET, NÃO DA TELA!
+        historicoChamadas.unshift({
+          nome: ultimoPaciente.nome,
+          sala: ultimoPaciente.sala,
           hora: horaFormatada,
-        };
+        });
 
-        // Evita duplicar o mesmo paciente seguido se o endpoint disparar duas vezes
-        if (
-          historicoChamadas.length === 0 ||
-          historicoChamadas[0].nome !== pacienteAntigo.nome
-        ) {
-          historicoChamadas.unshift(pacienteAntigo);
-          if (historicoChamadas.length > 5) {
-            historicoChamadas.pop();
-          }
-          renderizarHistorico();
+        if (historicoChamadas.length > 5) {
+          historicoChamadas.pop();
         }
+        renderizarHistorico();
       }
 
-      // 📺 ATUALIZAÇÃO DO PAINEL PRINCIPAL
-      elementoNome.innerText = dados.nome.toUpperCase();
-      elementoSala.innerText = dados.sala.toUpperCase();
+      // 📺 ATUALIZA O PAINEL PRINCIPAL
+      elementoNome.innerText = novoNome;
+      elementoSala.innerText = novaSala;
       elementoSala.style.display = "inline-block";
+
+      // 🆕 ATUALIZA O PACIENTE ATUAL
+      ultimoPaciente = {
+        nome: novoNome,
+        sala: novaSala,
+      };
 
       // Dispara a animação css de pulso/alerta
       elementoNome.classList.add("piscar");
@@ -152,7 +169,10 @@ function tocarSomChamada() {
     oscilador1.connect(ganho1);
     ganho1.connect(audioCtx.destination);
     oscilador1.start();
-    ganho1.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+    ganho1.gain.exponentialRampToValueAtTime(
+      0.00001,
+      audioCtx.currentTime + 0.4,
+    );
     oscilador1.stop(audioCtx.currentTime + 0.4);
 
     setTimeout(() => {
@@ -164,7 +184,10 @@ function tocarSomChamada() {
         oscilador2.connect(ganho2);
         ganho2.connect(audioCtx.destination);
         oscilador2.start();
-        ganho2.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+        ganho2.gain.exponentialRampToValueAtTime(
+          0.00001,
+          audioCtx.currentTime + 0.5,
+        );
         oscilador2.stop(audioCtx.currentTime + 0.5);
       } catch (e) {}
     }, 150);

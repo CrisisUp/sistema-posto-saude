@@ -78,46 +78,127 @@ body {
   text-transform: uppercase;
 }
 
+/* ===== MELHORIAS PARA O HISTÓRICO ===== */
+
+/* Container principal do histórico */
 .historico-lista {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+  padding: 10px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
+/* Cada item do histórico */
 .historico-item {
-  background-color: var(--bg-input);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--radius-paged);
-  padding: 15px;
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--cor-primaria, #2c7be5);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  animation: slideIn 0.3s ease-out;
+  transition: transform 0.2s ease;
+  animation: slideIn 0.3s ease;
 }
 
-.historico-info {
+.historico-item:hover {
+  transform: translateX(5px);
+}
+
+/* Informações do paciente */
+.historico-item .paciente-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.historico-nome {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--texto-principal);
-}
-
-.historico-sala {
-  font-size: 14px;
-  color: var(--texto-secundario);
+.historico-item .paciente-nome {
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
 }
 
-.historico-hora {
-  font-size: 16px;
-  color: var(--cor-primaria);
+.historico-item .paciente-sala {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.historico-item .paciente-sala::before {
+  content: "🏥";
+  font-size: 0.9rem;
+}
+
+/* Horário */
+.historico-item .chamada-hora {
+  font-size: 0.85rem;
   font-weight: 700;
+  color: var(--cor-primaria, #2c7be5);
+  background: rgba(44, 123, 229, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* Badge "Nova" para as 2 últimas chamadas */
+.historico-item.nova-chamada {
+  border-left-color: #ff6b6b;
+  background: linear-gradient(90deg, rgba(255, 107, 107, 0.05), transparent);
+}
+
+.historico-item.nova-chamada .chamada-hora {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+}
+
+/* Animação de entrada */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scrollbar personalizada */
+.historico-lista::-webkit-scrollbar {
+  width: 6px;
+}
+
+.historico-lista::-webkit-scrollbar-track {
+  background: var(--background-light, #f3f4f6);
+  border-radius: 10px;
+}
+
+.historico-lista::-webkit-scrollbar-thumb {
+  background: var(--cor-primaria, #2c7be5);
+  border-radius: 10px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .historico-item {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .historico-item .paciente-nome {
+    font-size: 0.95rem;
+  }
+
+  .historico-item .chamada-hora {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+  }
 }
 
 /* ==============================================================================
