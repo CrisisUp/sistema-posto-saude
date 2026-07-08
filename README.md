@@ -165,10 +165,16 @@ pip install fastapi "uvicorn[standard]" websockets cryptography
 
 ### * 3. Inicializar o Servidor na Rede Local
 
-Para descobrir o IP do seu computador na rede local (no macOS/Linux use ifconfig ou no Windows use `ipconfig`). Sabendo o seu IP (ex: 192.168.1.6), inicialize o Uvicorn liberando o host:
+Para descobrir o IP do seu computador na rede local (no macOS/Linux use `ifconfig` ou no Windows use `ipconfig`). Sabendo o seu IP (ex: 192.168.1.6), inicialize o Uvicorn liberando o host:
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --reload
+```
+
+Dentro da pasta banco:
+
+```bash
+python inserir_pacientes.py
 ```
 
 ## 📱 Como Acessar as Telas
@@ -200,8 +206,3 @@ Nota: Ao abrir a tela da TV, dê um clique em qualquer ponto da página para per
 Os documentos dos pacientes (CPF/SUS) são **criptografados** no banco de dados usando `Fernet (symmetric encryption)`, garantindo que dados sensíveis não fiquem expostos mesmo em caso de acesso direto ao arquivo SQLite.
 
 ## Desenvolvido por Cristiano Batista Pessoa 🚀
-
-`python inserir_pacientes.py`
-
-* Precisa acertar a questão dos numeros das salas maiores que 2 serem aceitas (consultório 3 por exemplo)
-* Melhorar o layout das últimas chamadas
